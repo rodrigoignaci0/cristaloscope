@@ -12,3 +12,5 @@ venv/
 env/
 
 .DS_Store
+
+examples/*_report.png

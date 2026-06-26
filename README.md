@@ -106,6 +106,23 @@ print(text)
 
 ---
 
+## Reproducible Smoke Test
+
+Run the small Qwen2.5-0.5B example on CPU:
+
+```bash
+MPLCONFIGDIR=/tmp/mpl-cristaloscope python examples/qwen_0_5b_cpu.py
+```
+
+Expected output includes the detected crystal layer, final rank, top-1 token,
+and a generated report at:
+
+```text
+examples/qwen_0_5b_report.png
+```
+
+---
+
 ## Research
 
 Cristaloscope implements findings from NE-OS Research on LLM internal geometry. The Three Phases phenomenon, hallucination probe, and steering methodology were validated on:
