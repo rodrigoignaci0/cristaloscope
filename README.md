@@ -25,57 +25,83 @@ pip install git+https://github.com/rodrigoignaci0/cristaloscope
 
 ## Quick Start
 
-### CristalAnalyzer — extract and visualize hidden states
+### CristalAnalyzer — analyze and visualize hidden states
 
 ```python
-from cristaloscope import CristalAnalyzer
+from cristaloscope import CristalAnalyzer, CristalVisualizer
 
-analyzer = CristalAnalyzer(model_name="Qwen/Qwen2.5-7B-Instruct")
-states = analyzer.extract("The capital of France is")
+analyzer = CristalAnalyzer("Qwen/Qwen2.5-7B-Instruct")
+result = analyzer.analyze(
+    prompt="The capital of France is",
+    answer="Paris",
+    store_hidden=True,
+)
 
-analyzer.plot_pca_layers(states)          # layer-by-layer PCA trajectory
-analyzer.plot_cosine_heatmap(states)      # inter-layer similarity matrix
+print(result.crystal_layer)
+print(result.crystal_type)
+
+fig = CristalVisualizer.full_report(result)
+fig.savefig("cristaloscope_report.png", dpi=150, bbox_inches="tight")
 ```
 
 ### ThreePhases — identify phase boundaries
 
 ```python
+from transformers import AutoModelForCausalLM, AutoTokenizer
 from cristaloscope import ThreePhases
 
-phases = ThreePhases(model_name="Qwen/Qwen2.5-7B-Instruct")
-result = phases.detect("Explain quantum entanglement")
+model_id = "Qwen/Qwen2.5-7B-Instruct"
+tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
+model = AutoModelForCausalLM.from_pretrained(model_id, trust_remote_code=True)
 
-print(result.boundaries)   # e.g. {'chaos': (0, 8), 'semantic': (9, 23), 'crystal': (24, 31)}
-print(result.jump_layer)   # layer where crystallization spike occurs
-phases.plot(result)
+phases = ThreePhases(model, tokenizer)
+result = phases.analyze(
+    prompt="The capital of France is",
+    answer="Paris",
+)
+
+print(result["phases"])
+print(result["crystal_layer"])
+print(result["crystal_type"])
 ```
 
 ### HallucinationInterceptor — detect hallucinations before generation
 
 ```python
+from transformers import AutoModelForCausalLM, AutoTokenizer
 from cristaloscope import HallucinationInterceptor
 
-interceptor = HallucinationInterceptor(model_name="Qwen/Qwen2.5-7B-Instruct", probe_layer=12)
+model_id = "Qwen/Qwen2.5-7B-Instruct"
+tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
+model = AutoModelForCausalLM.from_pretrained(model_id, trust_remote_code=True)
+
+interceptor = HallucinationInterceptor(model, tokenizer, layer=12)
 
 # fit expects list of prompts and binary labels (1 = hallucination)
 interceptor.fit(prompts_train, labels_train)
 
-predictions = interceptor.predict(prompts_test)   # returns probabilities
-print(f"AUC: {interceptor.auc_score(prompts_test, labels_test):.3f}")
+prediction = interceptor.predict("Who invented the telephone?")
+print(prediction["score"])
+print(prediction["risk"])
 ```
 
 ### ActivationSteering — correct outputs without touching weights
 
 ```python
+from transformers import AutoModelForCausalLM, AutoTokenizer
 from cristaloscope import ActivationSteering
 
-steerer = ActivationSteering(model_name="Qwen/Qwen2.5-7B-Instruct")
+model_id = "Qwen/Qwen2.5-7B-Instruct"
+tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
+model = AutoModelForCausalLM.from_pretrained(model_id, trust_remote_code=True)
 
-# fit learns a steering vector from correct/incorrect response pairs
-steerer.fit(wrong_prompts, correct_prompts, layer=20)
+steerer = ActivationSteering(model, tokenizer, layer=20)
 
-output = steerer.steer("Who invented the telephone?", strength=1.5)
-print(output.corrected_text)
+# fit learns a steering vector from prompts and binary uncertainty labels
+steerer.fit(prompts_train, labels_train)
+
+text = steerer.steer("Who invented the telephone?", alpha=1.5)
+print(text)
 ```
 
 ---
