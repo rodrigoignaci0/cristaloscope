@@ -108,6 +108,8 @@ print(text)
 
 ## Reproducible Smoke Test
 
+![Qwen2.5-0.5B Cristaloscope report](docs/qwen_0_5b_report.png)
+
 Run the small Qwen2.5-0.5B example on CPU:
 
 ```bash
